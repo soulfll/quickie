@@ -1,13 +1,31 @@
 {
-  "key_1": ["C:\\Program Files\\Discord\\Update.exe"],
-  "key_2": [],
-  "key_3": [],
-  "key_4": [],
-  "key_5": [],
-  "key_6": [],
-  "key_7": [],
-  "key_8": [],
-  "encoder_cw": [],
-  "encoder_ccw": [],
-  "encoder_click": []
+  "active_profile": "profile_1",
+  "profiles": {
+    "profile_1": {
+      "key_1": ["C:\\Program Files\\Discord\\Update.exe"],
+      "key_2": [],
+      "key_3": [],
+      "key_4": [],
+      "key_5": [],
+      "key_6": [],
+      "key_7": [],
+      "key_8": [],
+      "encoder_cw": [],
+      "encoder_ccw": [],
+      "encoder_click": []
+    },
+    "streaming": {
+      "key_1": ["C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe"],
+      "key_2": [],
+      "key_3": [],
+      "key_4": [],
+      "key_5": [],
+      "key_6": [],
+      "key_7": [],
+      "key_8": [],
+      "encoder_cw": [],
+      "encoder_ccw": [],
+      "encoder_click": []
+    }
+  }
 }

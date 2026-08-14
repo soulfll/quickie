@@ -34,9 +34,31 @@ python3 main.py
 ```
 
 This opens the GUI (one row per key + encoder action) and starts the global
-key listener in the background. Use "Add App..." to browse to an app and
-assign it to a slot -- any slot can hold multiple apps, all of which launch
-on that keypress. Changes save to `config.json` immediately.
+key listener in the background.
+
+There are two ways to assign apps to a slot:
+
+- **Mouse**: "Add App..." on any row, browse to the app, done. Works without
+  the Teensy plugged in -- good for setting things up before hardware exists.
+- **Assign via Key Press...** (the "verification system" from the design
+  flowchart): click it, press the *physical* key you want to assign (no more
+  guessing which key is "Key 3"), pick the app(s) in the file picker -- they
+  show up in amber as unconfirmed -- then press that **same key again** to
+  confirm and save. Press a *different* key instead and it cancels with
+  nothing saved. Needs the Teensy plugged in and flashed, since it listens
+  for a real keypress.
+
+Either way, changes save to `config.json` immediately.
+
+## Profiles
+
+The dropdown at the top switches between named profiles -- each one is a
+complete, independent 8-key + encoder mapping (e.g. a "streaming" profile vs
+a "gaming" profile). "New Profile..." creates an empty one. Right now
+switching is GUI-only; there's no hardware trigger to change the active
+profile from the device itself yet -- worth deciding once the encoder
+behavior is nailed down (long-press to cycle profiles? auto-switch based on
+which app is focused on Windows?).
 
 ## Testing without the Teensy plugged in
 
