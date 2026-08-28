@@ -1,7 +1,10 @@
 #include "keys.h"
 
-// TODO: replace with your real wiring once the hardware is soldered/breadboarded.
-static const uint8_t key_pins[NUM_KEYS] = {0, 1, 2, 3, 4, 5, 6, 7};
+// Real wiring, pulled directly from hardware/new project v.3 new layout.kicad_pcb
+// (grid reads left-to-right, top-to-bottom; bottom-left slot is the encoder,
+// not a key, which is why pin 6 / a "K7" switch don't appear here):
+//   K1=0 K2=1 K3=2 (row 1) | K4=3 K5=4 K6=5 (row 2) | K8=7 K9=8 (row 3)
+static const uint8_t key_pins[NUM_KEYS] = {0, 1, 2, 3, 4, 5, 7, 8};
 
 // Each key sends its own dedicated, otherwise-unused keycode. Nothing else on
 // a normal keyboard uses F13-F20, so these can't collide with real shortcuts,

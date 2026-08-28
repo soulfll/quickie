@@ -1,9 +1,9 @@
 #include "encoder.h"
 
-// TODO: replace with real wiring once the encoder is wired up.
-static const uint8_t PIN_A = 8;
-static const uint8_t PIN_B = 9;
-static const uint8_t PIN_CLICK = 10;
+// Real wiring, pulled directly from hardware/new project v.3 new layout.kicad_pcb
+static const uint8_t PIN_A = 9;
+static const uint8_t PIN_B = 10;
+static const uint8_t PIN_CLICK = 11;
 
 // Same idea as the 8 keys: dedicated unused keycodes, one tap per detent/click.
 // CW / CCW map to F21 / F22, the click maps to F23. What they *do* (volume,
