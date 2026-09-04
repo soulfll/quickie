@@ -1,0 +1,28 @@
+Quickie Companion App -- Privacy Notice
+
+What this app does:
+  - Listens in the background for a small set of dedicated keyboard codes
+    (F13 through F23) sent by your Quickie device. These codes are not used
+    by any normal keyboard shortcut, so this app never sees or reacts to
+    your regular typing.
+  - When one of those keys is pressed, it runs whatever you assigned to it:
+    opening an app already installed on this computer, opening a website in
+    your default browser, or typing a text snippet you wrote yourself.
+  - Your key assignments are saved in a local file (config.json) inside the
+    app's own folder on this computer.
+
+What this app does NOT do:
+  - It does not send anything over the internet. No analytics, no telemetry,
+    no remote server of any kind.
+  - It does not read, log, or transmit your regular keystrokes -- only the
+    dedicated F13-F23 codes from the physical Quickie device are acted on.
+  - It does not access your files, browsing history, or any other
+    application's data beyond launching what you explicitly configured it
+    to launch.
+
+Why it asks for Accessibility / Input Monitoring permission (macOS) or
+similar background-input permission (Windows):
+  This is required by the operating system for any app that needs to react
+  to a key press while another app is focused -- the same category of
+  permission used by tools like window-snapping utilities or hardware macro
+  pads. It is not a special or unusual request for what this app does.
