@@ -8,8 +8,9 @@ Entry point. Wires the pieces together:
 
 Assign mode (the "verification system" from the flowchart):
   1. Click "Assign via Key Press..."
-  2. Press the physical key you want to assign -> file picker opens,
-     choose one or more apps -> they show in amber ("unconfirmed")
+  2. Press the physical key you want to assign -> the action-type popup
+     opens (App / Website / Text Snippet, see action_picker.py) -> pick one
+     and fill it in -> it shows in amber ("unconfirmed")
   3. Press that SAME key again -> confirmed, saved for real
      Press a DIFFERENT key instead -> cancelled, nothing saved
 
@@ -18,28 +19,28 @@ stable, repeatable code, so "press to select" / "press to confirm" is just
 software state built on top of the same listener used at runtime.
 
 Run with the Teensy plugged in and flashed. Without hardware, use the
-mouse-driven "Add App..." buttons in each row instead -- both paths write to
+mouse-driven "Add..." buttons in each row instead -- both paths write to
 the same config.
 """
 
 import queue
 import tkinter as tk
-from tkinter import filedialog
 
 import config as config_store
+from action_picker import prompt_for_actions
 from gui import QuickieGUI
 from keymap import SLOT_LABELS
-from launcher import launch_all
+from launcher import run_all
 from listener import start_listener
 
 event_queue: "queue.Queue[str]" = queue.Queue()
 
-# Assign-mode state. "idle" = normal runtime behavior (keypress launches
+# Assign-mode state. "idle" = normal runtime behavior (keypress runs
 # whatever's assigned). "awaiting_select" = next keypress picks the slot.
 # "awaiting_confirm" = next keypress must match, or it cancels.
 mode = "idle"
 pending_slot = None
-pending_paths = []
+pending_actions = []
 
 
 def on_slot_pressed(slot: str):
@@ -49,38 +50,37 @@ def on_slot_pressed(slot: str):
 
 
 def start_assign(gui):
-    global mode, pending_slot, pending_paths
+    global mode, pending_slot, pending_actions
     mode = "awaiting_select"
     pending_slot = None
-    pending_paths = []
+    pending_actions = []
     gui.set_assign_enabled(False)
     gui.set_status("Assign mode: press the physical key you want to assign...")
 
 
 def _handle_select(slot, gui):
-    global mode, pending_slot, pending_paths
+    global mode, pending_slot, pending_actions
 
     label = SLOT_LABELS.get(slot, slot)
-    paths = filedialog.askopenfilenames(title=f"Choose app(s) for {label}")
-    if not paths:
+    actions = prompt_for_actions(gui.root)
+    if not actions:
         mode = "idle"
         gui.set_assign_enabled(True)
-        gui.set_status("Assign cancelled (no app chosen).")
+        gui.set_status("Assign cancelled.")
         return
 
     pending_slot = slot
-    pending_paths = list(paths)
-    gui.add_pending(slot, pending_paths)
+    pending_actions = actions
+    gui.add_pending(slot, pending_actions)
     mode = "awaiting_confirm"
     gui.set_status(f"Press {label} again to confirm, or press a different key to cancel.")
 
 
 def _handle_confirm(slot, gui, slots):
-    global mode, pending_slot, pending_paths
+    global mode, pending_slot, pending_actions
 
     if slot == pending_slot:
-        for path in pending_paths:
-            config_store.add_app_to_slot(slots, slot, path)
+        config_store.add_actions_to_slot(slots, slot, pending_actions)
         config_store.save_config(current_config)
         gui.confirm_pending(slot)
         gui.set_status(f"Confirmed: {SLOT_LABELS.get(slot, slot)} updated.")
@@ -90,7 +90,7 @@ def _handle_confirm(slot, gui, slots):
 
     mode = "idle"
     pending_slot = None
-    pending_paths = []
+    pending_actions = []
     gui.set_assign_enabled(True)
 
 
@@ -102,11 +102,11 @@ def process_queue(root, gui, get_slots):
             slots = get_slots()
 
             if mode == "idle":
-                apps = config_store.get_apps_for_slot(slots, slot)
+                actions = config_store.get_actions_for_slot(slots, slot)
                 label = SLOT_LABELS.get(slot, slot)
-                if apps:
-                    gui.set_status(f"{label} -> launching {len(apps)} app(s)")
-                    launch_all(apps)
+                if actions:
+                    gui.set_status(f"{label} -> running {len(actions)} action(s)")
+                    run_all(actions)
                 else:
                     gui.set_status(f"{label} pressed (nothing assigned yet)")
             elif mode == "awaiting_select":

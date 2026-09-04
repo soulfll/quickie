@@ -1,12 +1,15 @@
 """
 Tkinter UI: a profile selector up top, then one row per key/encoder slot,
-each with a list of assigned app paths and Add/Remove buttons. Tkinter ships
+each with a list of assigned actions (apps, websites, or text snippets --
+see action_picker.py and config.py) and Add/Remove buttons. Tkinter ships
 with Python so there's nothing extra to install for the UI itself.
 """
 
 import tkinter as tk
-from tkinter import filedialog, simpledialog, ttk
+from tkinter import simpledialog, ttk
 
+import config as config_store
+from action_picker import prompt_for_actions
 from keymap import SLOT_ORDER, SLOT_LABELS
 
 PENDING_COLOR = "#b58900"  # amber -- marks an unconfirmed assignment
@@ -16,7 +19,7 @@ class QuickieGUI:
     def __init__(self, root, slots, profile_names, active_profile,
                  on_change, on_profile_change, on_new_profile, on_assign_clicked):
         self.root = root
-        self.slots = slots  # live dict for the *active* profile: slot -> [paths]
+        self.slots = slots  # live dict for the *active* profile: slot -> [actions]
         self.on_change = on_change              # called after any manual edit
         self.on_profile_change = on_profile_change  # called with new profile name
         self.on_new_profile = on_new_profile        # called with new profile name
@@ -72,8 +75,8 @@ class QuickieGUI:
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(side="right", padx=6, pady=6)
 
-        add_btn = ttk.Button(btn_frame, text="Add App...",
-                              command=lambda s=slot: self._add_app(s))
+        add_btn = ttk.Button(btn_frame, text="Add...",
+                              command=lambda s=slot: self._add_action(s))
         add_btn.pack(fill="x", pady=(0, 4))
 
         remove_btn = ttk.Button(btn_frame, text="Remove Selected",
@@ -82,13 +85,17 @@ class QuickieGUI:
 
     # -- manual (mouse-driven) add/remove -----------------------------------
 
-    def _add_app(self, slot):
-        path = filedialog.askopenfilename(title=f"Choose app for {SLOT_LABELS[slot]}")
-        if not path:
+    def _add_action(self, slot):
+        actions = prompt_for_actions(self.root)
+        if not actions:
             return
         self.slots.setdefault(slot, [])
-        if path not in self.slots[slot]:
-            self.slots[slot].append(path)
+        changed = False
+        for action in actions:
+            if action not in self.slots[slot]:
+                self.slots[slot].append(action)
+                changed = True
+        if changed:
             self.refresh_slot(slot)
             self.on_change()
 
@@ -97,9 +104,10 @@ class QuickieGUI:
         selection = listbox.curselection()
         if not selection:
             return
-        path = listbox.get(selection[0])
-        if slot in self.slots and path in self.slots[slot]:
-            self.slots[slot].remove(path)
+        index = selection[0]
+        actions = self.slots.get(slot, [])
+        if 0 <= index < len(actions):
+            del actions[index]
             self.refresh_slot(slot)
             self.on_change()
 
@@ -131,12 +139,12 @@ class QuickieGUI:
     def set_assign_enabled(self, enabled: bool):
         self.assign_btn.config(state="normal" if enabled else "disabled")
 
-    def add_pending(self, slot, paths):
+    def add_pending(self, slot, actions):
         """Show not-yet-confirmed entries in amber until confirmed/cancelled."""
         listbox = self.listboxes[slot]
-        for path in paths:
+        for action in actions:
             idx = listbox.size()
-            listbox.insert("end", f"⏳ {path}  (press key again to confirm)")
+            listbox.insert("end", f"⏳ {config_store.action_label(action)}  (press key again to confirm)")
             listbox.itemconfig(idx, fg=PENDING_COLOR)
 
     def confirm_pending(self, slot):
@@ -150,8 +158,8 @@ class QuickieGUI:
     def refresh_slot(self, slot):
         listbox = self.listboxes[slot]
         listbox.delete(0, "end")
-        for path in self.slots.get(slot, []):
-            listbox.insert("end", path)
+        for action in self.slots.get(slot, []):
+            listbox.insert("end", config_store.action_label(action))
 
     def set_status(self, text: str):
         self.status_var.set(text)

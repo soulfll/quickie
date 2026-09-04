@@ -1,17 +1,22 @@
 """
 Loads/saves the profile-aware config: a named set of profiles, each holding
-its own key/encoder -> [app paths] mapping, plus which profile is active.
+its own key/encoder -> [action] mapping, plus which profile is active.
 
     {
       "active_profile": "profile_1",
       "profiles": {
-        "profile_1": { "key_1": [...], ..., "encoder_click": [...] },
+        "profile_1": { "key_1": [ {"type": "app", "value": "..."} ], ... },
         "profile_2": { ... }
       }
     }
 
-One slot can hold any number of app paths; on keypress every path assigned
-to that slot (in the active profile) gets launched.
+Each slot holds a list of *actions*, not just app paths -- see
+action_picker.py for where these get created. An action is:
+    {"type": "app",  "value": "<path to .exe/.app>"}
+    {"type": "url",  "value": "<https://...>"}
+    {"type": "text", "value": "<snippet to type out>"}
+One slot can hold any number of actions, mixed types included; on keypress
+every action assigned to that slot (in the active profile) runs in order.
 """
 
 import json
@@ -25,6 +30,15 @@ DEFAULT_PROFILE = "profile_1"
 
 def _empty_slots() -> dict:
     return {slot: [] for slot in SLOT_ORDER}
+
+
+def _migrate_action(item) -> dict:
+    """Configs saved before action types existed just stored a plain path
+    string per entry. Upgrade those in place to the {"type": "app", ...}
+    shape so old assignments keep working without redoing them by hand."""
+    if isinstance(item, str):
+        return {"type": "app", "value": item}
+    return item
 
 
 def load_config() -> dict:
@@ -45,6 +59,7 @@ def load_config() -> dict:
     for slots in data["profiles"].values():
         for slot in SLOT_ORDER:
             slots.setdefault(slot, [])
+            slots[slot] = [_migrate_action(a) for a in slots[slot]]
 
     return data
 
@@ -73,16 +88,33 @@ def add_profile(config: dict, name: str) -> None:
     config["profiles"].setdefault(name, _empty_slots())
 
 
-def get_apps_for_slot(slots: dict, slot: str) -> list:
+def get_actions_for_slot(slots: dict, slot: str) -> list:
     return slots.get(slot, [])
 
 
-def add_app_to_slot(slots: dict, slot: str, app_path: str) -> None:
+def add_actions_to_slot(slots: dict, slot: str, actions: list) -> None:
     slots.setdefault(slot, [])
-    if app_path not in slots[slot]:
-        slots[slot].append(app_path)
+    for action in actions:
+        if action not in slots[slot]:
+            slots[slot].append(action)
 
 
-def remove_app_from_slot(slots: dict, slot: str, app_path: str) -> None:
-    if slot in slots and app_path in slots[slot]:
-        slots[slot].remove(app_path)
+def remove_action_from_slot(slots: dict, slot: str, action: dict) -> None:
+    if slot in slots and action in slots[slot]:
+        slots[slot].remove(action)
+
+
+def action_label(action: dict) -> str:
+    """Short, scannable one-line label for a list row."""
+    action_type = action.get("type", "app")
+    value = action.get("value", "")
+    if action_type == "app":
+        return f"[App] {value}"
+    elif action_type == "url":
+        return f"[Web] {value}"
+    elif action_type == "text":
+        preview = value.replace("\n", " ")
+        if len(preview) > 40:
+            preview = preview[:40] + "…"
+        return f"[Text] {preview}"
+    return str(value)
