@@ -1,40 +1,44 @@
 #include "display.h"
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <U8g2lib.h>
 
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-#define OLED_RESET -1     // Teensy resets it via software; no dedicated pin.
-#define OLED_I2C_ADDR 0x3C // TODO: 0x3D on some boards -- check yours if blank.
+// 2.08" 256x64 OLED (GME25664-65, SH1122 controller), 7-pin SPI.
+//
+// Wiring on the PCB's J1OLED1 header (hardware/new project v.3 new layout.kicad_pcb):
+//   VCC -> 3.3V, GND -> GND
+//   SDA -> Teensy 18  (the module's SPI data line, NOT I2C)
+//   SCL -> Teensy 19  (the module's SPI clock line, NOT I2C)
+// RST / DC / CS aren't on that header, so they're jumper-wired straight to
+// free Teensy pins -- change these three if you wire them elsewhere. Avoid
+// 18/19 (those are the header's SDA/SCL, already on the module) and, on the
+// v3 board, 12/13/15 (the PCB puts the LEDs D1/D2/D3 on them).
+#define OLED_CLK 19
+#define OLED_DATA 18
+#define OLED_CS 16
+#define OLED_DC 17
+#define OLED_RST 20
 
-static Adafruit_SSD1306 oled(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-static bool oled_ok = false;
+// Software (bit-banged) SPI, same approach as the vendor STM32 demo. Hardware
+// SPI on the Teensy would use pins 11/12/13, and 11 is the encoder click.
+// Argument order is: rotation, clock, data, cs, dc, reset.
+static U8G2_SH1122_256X64_F_4W_SW_SPI oled(
+    U8G2_R0, OLED_CLK, OLED_DATA, OLED_CS, OLED_DC, OLED_RST);
 
 void display_init() {
-  Wire.begin();
-  oled_ok = oled.begin(SSD1306_SWITCHCAPVCC, OLED_I2C_ADDR);
-  if (!oled_ok) {
-    Serial.println("SSD1306 not found -- check wiring/I2C address");
-    return;
-  }
-  oled.clearDisplay();
-  oled.setTextColor(SSD1306_WHITE);
+  // SPI is write-only here, so there's no way to detect a missing or
+  // miswired screen from code -- it just stays blank.
+  oled.begin();
   display_show_text("Quickie", "booting...");
 }
 
 void display_show_text(const char *line1, const char *line2) {
-  if (!oled_ok) return;
-
-  oled.clearDisplay();
-  oled.setTextSize(1);
-  oled.setCursor(0, 0);
-  oled.println(line1);
+  oled.clearBuffer();
+  oled.setFont(u8g2_font_helvB14_tf);
+  oled.drawStr(0, 18, line1);
   if (line2) {
-    oled.setCursor(0, 12);
-    oled.println(line2);
+    oled.setFont(u8g2_font_helvR10_tf);
+    oled.drawStr(0, 40, line2);
   }
-  oled.display();
+  oled.sendBuffer();
 }
 
 void display_update() {
