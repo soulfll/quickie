@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quickie — one press, your whole workflow</title>
+<meta name="description" content="Quickie is a compact key pad for Windows 11. Press a key to open your apps, jump to a website, type a snippet, or replay a set of keystrokes.">
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --surface: #ffffff;
+    --ink: #1c1b1a;
+    --muted: #6a665f;
+    --line: #e3dfd6;
+    --accent: #e8590c;
+    --accent-ink: #ffffff;
+    --device: #26231f;
+    --device-key: #3a3631;
+    --device-screen: #0d0c0b;
+    --device-glow: #ffb36b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151413;
+      --surface: #1f1d1b;
+      --ink: #f3f0ea;
+      --muted: #a09b92;
+      --line: #322f2b;
+      --accent: #ff7a2e;
+      --accent-ink: #1a0e05;
+      --device: #0f0e0d;
+      --device-key: #2b2825;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { width: 100%; max-width: 1040px; margin: 0 auto; padding-inline: 20px; }
+  a { color: inherit; }
+
+  header.top { padding-block: 22px; display: flex; align-items: center; justify-content: space-between; }
+  .brand { font-weight: 800; font-size: 20px; letter-spacing: -0.02em; text-decoration: none; }
+  .brand span { color: var(--accent); }
+  nav a { margin-left: 22px; text-decoration: none; color: var(--muted); font-size: 15px; }
+  nav a:hover { color: var(--ink); }
+
+  .hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center; padding-block: 48px 72px; }
+  h1 { font-size: clamp(36px, 6vw, 60px); line-height: 1.05; letter-spacing: -0.035em; margin: 0 0 18px; }
+  .lead { font-size: 19px; color: var(--muted); max-width: 34em; margin: 0 0 28px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .btn {
+    display: inline-block; padding: 14px 24px; border-radius: 12px; font-weight: 650; text-decoration: none;
+    background: var(--accent); color: var(--accent-ink); border: 1px solid transparent;
+  }
+  .btn:hover { filter: brightness(1.06); }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn.ghost:hover { border-color: var(--muted); }
+  .fine { color: var(--muted); font-size: 14px; margin-top: 14px; }
+
+  /* The device illustration, drawn in CSS: screen on top, 3x3 grid with the dial top-right. */
+  .device {
+    background: var(--device); border-radius: 26px; padding: 22px; max-width: 360px; margin-inline: auto;
+    box-shadow: 0 30px 60px -28px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .screen {
+    background: var(--device-screen); border-radius: 10px; height: 64px; margin-bottom: 18px;
+    display: flex; align-items: center; padding-inline: 18px; color: var(--device-glow);
+    font: 600 20px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .04em;
+  }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .key { aspect-ratio: 1; border-radius: 14px; background: var(--device-key); box-shadow: inset 0 -4px 0 rgba(0,0,0,.35); }
+  .dial {
+    grid-column: 3; grid-row: 1; aspect-ratio: 1; border-radius: 50%;
+    background: conic-gradient(from 210deg, #55504a, #2f2c28, #6a655e, #2f2c28, #55504a);
+    box-shadow: inset 0 0 0 7px var(--device), inset 0 0 0 9px rgba(255,255,255,.08);
+  }
+
+  section { padding-block: 64px; border-top: 1px solid var(--line); }
+  h2 { font-size: clamp(26px, 4vw, 36px); letter-spacing: -0.025em; line-height: 1.15; margin: 0 0 12px; }
+  .sub { color: var(--muted); max-width: 40em; margin: 0 0 36px; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: step; padding: 0; list-style: none; margin: 0; }
+  .steps li {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 24px; counter-increment: step;
+  }
+  .steps li::before {
+    content: counter(step); display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
+    background: var(--accent); color: var(--accent-ink); font-weight: 700; margin-bottom: 14px;
+  }
+  .steps h3, .cards h3 { margin: 0 0 6px; font-size: 18px; letter-spacing: -0.01em; }
+  .steps p, .cards p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+  .tag { display: inline-block; font: 600 12px/1 ui-monospace, Menlo, Consolas, monospace; text-transform: uppercase;
+         letter-spacing: .08em; color: var(--accent); margin-bottom: 10px; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+  .two ul { padding-left: 20px; margin: 0; color: var(--muted); }
+  .two li { margin-bottom: 8px; }
+  .two h3 { margin: 0 0 10px; font-size: 18px; }
+
+  details { border-top: 1px solid var(--line); padding-block: 16px; }
+  details:last-of-type { border-bottom: 1px solid var(--line); }
+  summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+  summary::after { content: "+"; color: var(--accent); font-size: 22px; line-height: 1; }
+  details[open] summary::after { content: "–"; }
+  details p { color: var(--muted); margin: 10px 0 0; max-width: 46em; }
+
+  footer { padding-block: 40px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; }
+
+  @media (max-width: 820px) {
+    .hero { grid-template-columns: 1fr; gap: 36px; padding-block: 24px 48px; }
+    .steps, .two { grid-template-columns: 1fr; }
+    nav a { margin-left: 14px; }
+  }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#">Quick<span>ie</span></a>
+    <nav>
+      <a href="#how">How it works</a>
+      <a href="#actions">What it does</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <div>
+      <h1>Your most-used apps, one press away.</h1>
+      <p class="lead">Quickie is a compact key pad for Windows&nbsp;11. Give each key a job &mdash; open your work apps, jump to a site, type a snippet, or replay a set of keystrokes &mdash; then do it all with a single press.</p>
+      <div class="cta">
+        <!-- Points at the GitHub Releases page; once QuickieSetup.exe is attached to a release, this downloads the latest. -->
+        <a class="btn" href="https://github.com/soulfll/quickie/releases/latest">Download for Windows</a>
+        <a class="btn ghost" href="#how">See how it works</a>
+      </div>
+      <p class="fine">Windows 11 &middot; Installs in a minute &middot; No account needed</p>
+    </div>
+
+    <div class="device" role="img" aria-label="The Quickie key pad: a small screen above eight keys and a dial">
+      <div class="screen">Quickie</div>
+      <div class="grid">
+        <div class="key"></div><div class="key"></div><div class="dial"></div>
+        <div class="key"></div><div class="key"></div><div class="key"></div>
+        <div class="key"></div><div class="key"></div><div class="key"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section id="how">
+  <div class="wrap">
+    <h2>Set up in three steps</h2>
+    <p class="sub">The keys work as soon as you plug it in. The app is what turns them into your shortcuts.</p>
+    <ol class="steps">
+      <li>
+        <h3>Install the app</h3>
+        <p>Download the installer, accept the short privacy notice, and click through. There&rsquo;s nothing else to install.</p>
+      </li>
+      <li>
+        <h3>Plug in your Quickie</h3>
+        <p>Use any USB port. It shows up as a keyboard, so there are no drivers to hunt for.</p>
+      </li>
+      <li>
+        <h3>Give each key a job</h3>
+        <p>In the app, choose &ldquo;Assign via Key Press,&rdquo; press the key you want, pick what it should do, then press it once more to confirm.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section id="actions">
+  <div class="wrap">
+    <h2>One key, as many things as you like</h2>
+    <p class="sub">Stack several actions on a key and they run in order. Pressing it is always a single press, however much is behind it.</p>
+    <div class="cards">
+      <div class="card"><span class="tag">Apps</span><h3>Open apps</h3><p>Pick from a searchable list of what&rsquo;s installed &mdash; or several at once to start your whole workday.</p></div>
+      <div class="card"><span class="tag">Web</span><h3>Open websites</h3><p>Jump straight to the sites you live in: mail, docs, dashboards, your calendar.</p></div>
+      <div class="card"><span class="tag">Text</span><h3>Type a snippet</h3><p>Sign-offs, canned replies, a code block &mdash; typed out wherever your cursor is.</p></div>
+      <div class="card"><span class="tag">Record</span><h3>Replay keystrokes</h3><p>Can&rsquo;t predict what you&rsquo;ll need? Record a set of key presses once and replay them with one press.</p></div>
+    </div>
+    <div class="two" style="margin-top:48px">
+      <div>
+        <h3>Profiles</h3>
+        <ul>
+          <li>Make a separate set of key assignments for each kind of work.</li>
+          <li>Switch profiles in the app and the whole pad changes with it.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Built for confirming, not guessing</h3>
+        <ul>
+          <li>Assigning is a deliberate press-select, press-confirm.</li>
+          <li>Press a different key instead and nothing gets saved.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="privacy">
+  <div class="wrap">
+    <h2>Private by design</h2>
+    <p class="sub">The app works entirely on your computer.</p>
+    <div class="two">
+      <div>
+        <h3>What it does</h3>
+        <ul>
+          <li>Listens for a small set of dedicated codes sent by your Quickie &mdash; codes no normal shortcut uses.</li>
+          <li>Runs what you assigned: opens an app, opens a site, types your snippet, or replays your recording.</li>
+          <li>Saves your assignments in a file on your own computer.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>What it doesn&rsquo;t</h3>
+        <ul>
+          <li>It doesn&rsquo;t send anything over the internet &mdash; no analytics, no telemetry, no server.</li>
+          <li>It doesn&rsquo;t read your regular typing. The one exception is when you choose to record keystrokes: it captures keys only from Start until you click Stop, and keeps them only on your computer.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <h2>Questions</h2>
+    <details>
+      <summary>Does it work on Mac or Linux?</summary>
+      <p>Quickie is built for Windows&nbsp;11. The keys will still register as keyboard presses elsewhere, but the app is a Windows app.</p>
+    </details>
+    <details>
+      <summary>Do I need to be online?</summary>
+      <p>Only to download the installer. After that the app doesn&rsquo;t need a connection, and it never sends your data anywhere.</p>
+    </details>
+    <details>
+      <summary>Will Windows warn me when I install it?</summary>
+      <p>Possibly. New installers that aren&rsquo;t digitally signed can trigger a blue &ldquo;Windows protected your PC&rdquo; screen. Choose &ldquo;More info,&rdquo; then &ldquo;Run anyway.&rdquo;</p>
+    </details>
+    <details>
+      <summary>Why does the app ask for permission to watch the keyboard?</summary>
+      <p>Windows requires it for any app that reacts to a key press while another program is in front &mdash; the same permission window-snapping tools and macro pads use.</p>
+    </details>
+    <details>
+      <summary>Can one key do more than one thing?</summary>
+      <p>Yes. Add as many actions as you like to a key &mdash; apps, websites, text and recordings can be mixed &mdash; and they run in order when you press it.</p>
+    </details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>&copy; Quickie</span>
+    <span><a href="https://github.com/soulfll/quickie">Source on GitHub</a></span>
+  </div>
+</footer>
+
+</body>
+</html>
