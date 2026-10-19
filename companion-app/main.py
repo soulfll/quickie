@@ -26,8 +26,10 @@ the same config.
 import queue
 import threading
 import tkinter as tk
+from tkinter import messagebox
 
 import config as config_store
+import single_instance
 from action_picker import prompt_for_actions
 from device_link import DeviceLink
 from gui import QuickKeyGUI
@@ -143,6 +145,18 @@ volume_watcher = VolumeWatcher(link.show_volume)
 
 def main():
     global current_config
+
+    if not single_instance.acquire():
+        # Another copy is already running; two would fight over the device.
+        notice = tk.Tk()
+        notice.withdraw()
+        messagebox.showinfo(
+            "Quick-Key",
+            "Quick-Key is already running.\n\nLook for its window (Cmd-Tab on a Mac, "
+            "Alt-Tab on Windows) or the system tray.",
+        )
+        return
+
     current_config = config_store.load_config()
 
     root = tk.Tk()

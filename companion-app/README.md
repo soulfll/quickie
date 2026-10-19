@@ -38,6 +38,14 @@ python3 main.py
 This opens the GUI (one row per key) and starts the global
 key listener in the background.
 
+**On a Mac the terminal prompt comes back right away while the app keeps
+running** -- that is normal, not a failure. Quit it with Cmd+Q on its window
+(or `pkill -f main.py`), and don't launch it again to "retry". Only one copy
+can run at a time: a second launch just says "Quick-Key is already running".
+
+To trace the volume bar (key seen -> volume read -> sent to the device), start it
+with `QUICKKEY_DEBUG=1 python3 -u main.py`.
+
 There are two ways to assign apps to a slot:
 
 - **Mouse**: "Add App..." on any row, browse to the app, done. Works without
