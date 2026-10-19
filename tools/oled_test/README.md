@@ -40,3 +40,27 @@ serial monitor.
   / re-solder the flying wires.
 - **Everything is clean:** the wiring and screen are fine; the problem is in the
   firmware's startup or state.
+
+## Wire-order finder
+
+If the pattern test shows commands working (pattern 1 lights up) but pictures
+never appear, and you suspect two of the three flying wires (CS, DC, RST) are
+swapped, flash the finder instead:
+
+```bash
+pio run -e oled_pins_v4 -t upload
+```
+
+It tries all six ways the three wires could be connected. The Teensy's own LED
+blinks 1-6 times to say which way is next, then the screen shows white and then
+stripes. The way whose stripes are clean and even is the correct one.
+
+## What this has found before
+
+- **DC wire not reaching the screen** (new board, Oct 2026): pattern 1 was white
+  but 2-5 never showed, and the finder gave clean stripes for no order other
+  than the real wiring. A multimeter reading of the screen's DC pin during
+  patterns 2-6 (should be about 3.3 V) tells you for certain. Re-seating the wire
+  fixed it.
+- Always unplug USB before touching wires. A spark from a wire brushing the
+  wrong pin on a live board is how most accidental shorts happen.
