@@ -3,6 +3,7 @@
 #include "encoder.h"
 #include "rgb.h"
 #include "display.h"
+#include "link.h"
 
 void setup() {
   Serial.begin(115200);
@@ -16,6 +17,7 @@ void setup() {
 void loop() {
   keys_scan();
   encoder_scan();
+  link_poll();
   rgb_update();
   display_update();
 }
