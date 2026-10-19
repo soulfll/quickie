@@ -1,13 +1,13 @@
-# PyInstaller spec for Quickie. Bundles main.py and every local module
+# PyInstaller spec for Quick-Key. Bundles main.py and every local module
 # (gui.py, config.py, launcher.py, listener.py, keymap.py, action_picker.py)
 # plus a full Python interpreter into one .exe -- the end user never
 # installs Python or pip installs anything.
 #
 # Run on WINDOWS (PyInstaller can't cross-compile a Windows .exe from Mac):
 #   pip install pyinstaller
-#   pyinstaller quickie.spec
+#   pyinstaller quickkey.spec
 #
-# Output lands in dist/Quickie.exe -- see BUILD_WINDOWS.md for the full
+# Output lands in dist/QuickKey.exe -- see BUILD_WINDOWS.md for the full
 # walkthrough including wrapping this in a real installer.
 
 # -*- mode: python ; coding: utf-8 -*-
@@ -22,7 +22,9 @@ a = Analysis(
     # here avoids a "No module named pynput.keyboard._win32" crash at
     # runtime on a machine that doesn't have a dev Python install to fall
     # back on.
-    hiddenimports=['pynput.keyboard._win32', 'pynput.mouse._win32'],
+    hiddenimports=['pynput.keyboard._win32', 'pynput.mouse._win32',
+                   'serial.tools.list_ports_windows',
+                   'pycaw.pycaw', 'comtypes'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -37,7 +39,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='Quickie',
+    name='QuickKey',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

@@ -1,21 +1,23 @@
 """
-Tkinter UI: a profile selector up top, then one row per key/encoder slot,
+Tkinter UI: a profile selector up top, then one row per key,
 each with a list of assigned actions (apps, websites, or text snippets --
 see action_picker.py and config.py) and Add/Remove buttons. Tkinter ships
 with Python so there's nothing extra to install for the UI itself.
 """
 
+import sys
 import tkinter as tk
 from tkinter import simpledialog, ttk
 
 import config as config_store
 from action_picker import prompt_for_actions
 from keymap import SLOT_ORDER, SLOT_LABELS
+from listbox_select import enable_command_click
 
 PENDING_COLOR = "#b58900"  # amber -- marks an unconfirmed assignment
 
 
-class QuickieGUI:
+class QuickKeyGUI:
     def __init__(self, root, slots, profile_names, active_profile,
                  on_change, on_profile_change, on_new_profile, on_assign_clicked):
         self.root = root
@@ -26,7 +28,7 @@ class QuickieGUI:
         self.on_assign_clicked = on_assign_clicked  # called when "Assign via Key Press" clicked
         self.listboxes = {}
 
-        root.title("Quickie")
+        root.title("Quick-Key")
         root.geometry("560x600")
 
         # -- top bar: profile selector + assign-by-keypress ------------------
@@ -53,6 +55,11 @@ class QuickieGUI:
         self.status_var = tk.StringVar(value="Waiting for a key press...")
         status_label = ttk.Label(root, textvariable=self.status_var, foreground="gray")
         status_label.pack(fill="x", padx=10, pady=(6, 0))
+        mod = "Cmd" if sys.platform == "darwin" else "Ctrl"
+        ttk.Label(
+            root, foreground="gray",
+            text=f"Tip: {mod}-click to select several items in a list, then Remove Selected.",
+        ).pack(fill="x", padx=10)
 
         # -- per-slot rows -------------------------------------------------------
         container = ttk.Frame(root)
@@ -67,7 +74,11 @@ class QuickieGUI:
         frame = ttk.LabelFrame(parent, text=SLOT_LABELS[slot])
         frame.pack(fill="x", pady=4)
 
-        listbox = tk.Listbox(frame, height=3)
+        # extended = Shift-click for a range, Ctrl-click (Cmd-click on Mac)
+        # to pick several. exportselection=False keeps one row's selection
+        # from being cleared when you click in a different row's list.
+        listbox = tk.Listbox(frame, height=3, selectmode="extended", exportselection=False)
+        enable_command_click(listbox)
         listbox.pack(side="left", fill="both", expand=True, padx=(6, 0), pady=6)
         self.listboxes[slot] = listbox
         self.refresh_slot(slot)
@@ -104,12 +115,14 @@ class QuickieGUI:
         selection = listbox.curselection()
         if not selection:
             return
-        index = selection[0]
         actions = self.slots.get(slot, [])
-        if 0 <= index < len(actions):
-            del actions[index]
-            self.refresh_slot(slot)
-            self.on_change()
+        # Delete from the highest index down so earlier removals don't
+        # shift the positions of the ones still to go.
+        for index in sorted(selection, reverse=True):
+            if 0 <= index < len(actions):
+                del actions[index]
+        self.refresh_slot(slot)
+        self.on_change()
 
     # -- profile controls ----------------------------------------------------
 

@@ -1,13 +1,15 @@
-# Quickie companion app
+# Quick-Key companion app
 
-The Windows-side app: lets you assign any number of installed apps to each
-physical key/encoder action on the Quickie pad, listens for the Teensy's
-keypresses, and launches whatever's assigned.
+The Windows-side app: lets you assign apps, websites, typed text or recorded
+keystrokes to each of the Quick-Key's 8 keys, listens for the Teensy's
+keypresses, and runs whatever's assigned. (The dial isn't assignable: it's a
+volume knob -- turn for volume, click for mute -- using the standard media
+keys, so it works with no software installed.)
 
 ## How it fits together
 
 The Teensy firmware doesn't know or care what each key "does" -- it just
-reports "physical key N went down" as a USB HID keyboard, using F13-F23 (keys
+reports "physical key N went down" as a USB HID keyboard, using F13-F20 (keys
 otherwise unused by anything, so no shortcut collisions). This app listens
 globally for exactly those keycodes and does the rest: looking up which
 app(s) are assigned to that key and launching them. All the "any key can open
@@ -33,7 +35,7 @@ run `brew install python-tk@3.14` (or whatever your Python version is) first.
 python3 main.py
 ```
 
-This opens the GUI (one row per key + encoder action) and starts the global
+This opens the GUI (one row per key) and starts the global
 key listener in the background.
 
 There are two ways to assign apps to a slot:
@@ -53,12 +55,13 @@ Either way, changes save to `config.json` immediately.
 ## Profiles
 
 The dropdown at the top switches between named profiles -- each one is a
-complete, independent 8-key + encoder mapping (e.g. a "streaming" profile vs
+complete, independent 8-key mapping (e.g. a "streaming" profile vs
 a "gaming" profile). "New Profile..." creates an empty one. Right now
 switching is GUI-only; there's no hardware trigger to change the active
-profile from the device itself yet -- worth deciding once the encoder
-behavior is nailed down (long-press to cycle profiles? auto-switch based on
-which app is focused on Windows?).
+profile from the device itself yet -- worth deciding (a button combo to
+cycle profiles? auto-switch based on which app is focused on Windows?).
+The device's screen shows the active profile, and what each key does as you
+press it.
 
 ## Testing without the Teensy plugged in
 

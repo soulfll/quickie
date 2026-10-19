@@ -14,43 +14,132 @@ at runtime is untouched -- still exactly one press, no matter which of the
 """
 
 import os
+import subprocess
 import sys
 import tkinter as tk
 from tkinter import filedialog, simpledialog, ttk
 
-
-def _app_filetypes():
-    if sys.platform == "win32":
-        return [("Applications", "*.exe *.lnk"), ("All files", "*.*")]
-    elif sys.platform == "darwin":
-        return [("Applications", "*.app"), ("All files", "*")]
-    return [("All files", "*")]
+from app_scanner import filter_apps, find_installed_apps
+from listbox_select import enable_command_click
+from recorder import Recorder
 
 
-def _app_initialdir():
-    """Point straight at the folder full of clean, icon-friendly shortcuts
-    instead of leaving the user to dig through C:\\ or /. On Windows this is
-    the exact same list the Start Menu itself shows -- the closest thing
-    Windows has to macOS's tidy /Applications."""
+def _browse_for_apps():
+    """Fallback for an app that isn't in the list. Runs the OS's own file
+    chooser, so it needs no extra libraries. Returns a list of paths.
+
+    On macOS this goes through osascript instead of Tk's file dialog: Tk's
+    shows .app bundles as folders (can open them, can't pick them) and
+    attaches itself to our window as a sheet, so the window moved with it."""
+    if sys.platform == "darwin":
+        script = (
+            'set picked to choose file of type {"com.apple.application-bundle"} '
+            'with prompt "Choose app(s)" '
+            'default location (POSIX file "/Applications") '
+            'with multiple selections allowed\n'
+            'set out to {}\n'
+            'repeat with f in picked\n'
+            '  set end of out to POSIX path of f\n'
+            'end repeat\n'
+            'set AppleScript\'s text item delimiters to linefeed\n'
+            'return out as text'
+        )
+        try:
+            result = subprocess.run(
+                ["osascript", "-e", script], capture_output=True, text=True,
+            )
+        except OSError:
+            return []
+        if result.returncode != 0:  # user hit Cancel (or osascript failed)
+            return []
+        return [line.strip().rstrip("/") for line in result.stdout.splitlines() if line.strip()]
+
+    initialdir = None
     if sys.platform == "win32":
         start_menu = os.path.join(
             os.environ.get("ProgramData", r"C:\ProgramData"),
             "Microsoft", "Windows", "Start Menu", "Programs",
         )
-        return start_menu if os.path.isdir(start_menu) else None
-    elif sys.platform == "darwin":
-        return "/Applications"
-    return None
+        initialdir = start_menu if os.path.isdir(start_menu) else None
+        filetypes = [("Applications", "*.exe *.lnk"), ("All files", "*.*")]
+    else:
+        filetypes = [("All files", "*")]
+    return list(filedialog.askopenfilenames(
+        title="Choose app(s)", initialdir=initialdir, filetypes=filetypes,
+    ))
+
+
+class _AppPickerDialog(tk.Toplevel):
+    """Searchable list of installed apps (see app_scanner.py). Select one or
+    several -- Shift-click for a range, Cmd-click (Mac) / Ctrl-click
+    (Windows) to add or drop single ones -- then Add Selected."""
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Choose App(s)")
+        self.result = []
+        self._all_apps = find_installed_apps()
+        self._shown = list(self._all_apps)
+        self.transient(parent)
+        self.protocol("WM_DELETE_WINDOW", self.destroy)
+
+        ttk.Label(self, text="Search:").grid(row=0, column=0, sticky="w", padx=(12, 4), pady=(12, 4))
+        self.query = tk.StringVar()
+        self.query.trace_add("write", lambda *_: self._refilter())
+        search = ttk.Entry(self, textvariable=self.query, width=40)
+        search.grid(row=0, column=1, sticky="ew", padx=(0, 12), pady=(12, 4))
+
+        frame = ttk.Frame(self)
+        frame.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=12, pady=4)
+        self.listbox = tk.Listbox(
+            frame, selectmode="extended", exportselection=False, height=14, width=46,
+        )
+        scroll = ttk.Scrollbar(frame, orient="vertical", command=self.listbox.yview)
+        self.listbox.configure(yscrollcommand=scroll.set)
+        self.listbox.pack(side="left", fill="both", expand=True)
+        scroll.pack(side="right", fill="y")
+        enable_command_click(self.listbox)
+        self.listbox.bind("<Double-Button-1>", lambda e: self._add_selected())
+
+        mod = "Cmd" if sys.platform == "darwin" else "Ctrl"
+        ttk.Label(
+            self, foreground="gray",
+            text=f"{mod}-click to pick several, Shift-click for a range.",
+        ).grid(row=2, column=0, columnspan=2, sticky="w", padx=12)
+
+        btns = ttk.Frame(self)
+        btns.grid(row=3, column=0, columnspan=2, pady=12)
+        ttk.Button(btns, text="Add Selected", command=self._add_selected).pack(side="left", padx=4)
+        ttk.Button(btns, text="Browse for Other...", command=self._browse).pack(side="left", padx=4)
+        ttk.Button(btns, text="Cancel", command=self.destroy).pack(side="left", padx=4)
+
+        self.columnconfigure(1, weight=1)
+        self.rowconfigure(1, weight=1)
+        self._refilter()
+        search.focus_set()
+        self.wait_window(self)
+
+    def _refilter(self):
+        self._shown = filter_apps(self._all_apps, self.query.get())
+        self.listbox.delete(0, "end")
+        for name, _path in self._shown:
+            self.listbox.insert("end", name)
+
+    def _add_selected(self):
+        self.result = [self._shown[i][1] for i in self.listbox.curselection()]
+        if self.result:
+            self.destroy()
+
+    def _browse(self):
+        picked = _browse_for_apps()
+        if picked:
+            self.result = picked
+            self.destroy()
 
 
 def _pick_apps(parent):
-    paths = filedialog.askopenfilenames(
-        parent=parent,
-        title="Choose app(s)",
-        initialdir=_app_initialdir(),
-        filetypes=_app_filetypes(),
-    )
-    return [{"type": "app", "value": p} for p in paths]
+    dialog = _AppPickerDialog(parent)
+    return [{"type": "app", "value": p} for p in dialog.result]
 
 
 def _pick_website(parent):
@@ -103,6 +192,74 @@ def _pick_text(parent):
     return []
 
 
+class _RecordDialog(tk.Toplevel):
+    """Start/stop recorder for a keystroke macro. Recording is global (works
+    while you're typing in other apps), so it's stopped with a mouse click on
+    this window -- no keystroke is needed to end it, and none gets recorded
+    by mistake."""
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Record Keystrokes")
+        self.result = None
+        self._recorder = Recorder()
+        self.transient(parent)
+        self.resizable(False, False)
+        self.protocol("WM_DELETE_WINDOW", self._cancel)
+
+        self.info = tk.StringVar(
+            value="Click Start, then do your keystrokes in any app.\n"
+                  "Come back here and click Stop when you're done.\n\n"
+                  "Don't type passwords while recording -- every key is saved."
+        )
+        ttk.Label(self, textvariable=self.info, justify="left").pack(
+            padx=20, pady=(16, 10)
+        )
+
+        btns = ttk.Frame(self)
+        btns.pack(pady=(0, 16))
+        self.start_btn = ttk.Button(btns, text="Start Recording", command=self._start)
+        self.start_btn.pack(side="left", padx=4)
+        self.stop_btn = ttk.Button(
+            btns, text="Stop & Save", command=self._stop, state="disabled",
+        )
+        self.stop_btn.pack(side="left", padx=4)
+        ttk.Button(btns, text="Cancel", command=self._cancel).pack(side="left", padx=4)
+
+        self.wait_window(self)
+
+    def _start(self):
+        self._recorder.start()
+        self.start_btn.config(state="disabled")
+        self.stop_btn.config(state="normal")
+        self._tick()
+
+    def _tick(self):
+        if self._recorder.recording:
+            presses = sum(1 for e in self._recorder.events if e["action"] == "down")
+            self.info.set(f"RECORDING...  {presses} keystrokes so far\n\n"
+                          "Do your keystrokes, then click Stop & Save here.")
+            self.after(200, self._tick)
+
+    def _stop(self):
+        events = self._recorder.stop()
+        if any(e["action"] == "down" for e in events):
+            self.result = events
+        self.destroy()
+
+    def _cancel(self):
+        if self._recorder.recording:
+            self._recorder.stop()
+        self.destroy()
+
+
+def _pick_macro(parent):
+    dialog = _RecordDialog(parent)
+    if dialog.result:
+        return [{"type": "macro", "value": dialog.result}]
+    return []
+
+
 class _TypeChooser(tk.Toplevel):
     """The one extra click this whole design costs: app vs website vs text."""
 
@@ -119,6 +276,7 @@ class _TypeChooser(tk.Toplevel):
             ("Open App(s)", "app"),
             ("Open Website", "url"),
             ("Type Text Snippet", "text"),
+            ("Record Keystrokes", "macro"),
         ]:
             ttk.Button(
                 self, text=label, width=28,
@@ -144,4 +302,6 @@ def prompt_for_actions(parent):
         return _pick_website(parent)
     elif chooser.choice == "text":
         return _pick_text(parent)
+    elif chooser.choice == "macro":
+        return _pick_macro(parent)
     return []

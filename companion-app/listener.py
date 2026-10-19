@@ -1,5 +1,5 @@
 """
-Listens globally for the F13-F23 keycodes the Teensy sends and fires a
+Listens globally for the F13-F20 keycodes the Teensy sends and fires a
 callback with the friendly slot name (see keymap.py). Runs in a background
 thread so it doesn't block the GUI's main loop.
 """
@@ -8,12 +8,14 @@ import sys
 
 from pynput import keyboard
 
+from debuglog import debug
+
 from keymap import MAC_VK_TO_SLOT, WIN_VK_TO_SLOT
 
 VK_TO_SLOT = WIN_VK_TO_SLOT if sys.platform == "win32" else MAC_VK_TO_SLOT
 
 
-def _get_vk(key):
+def get_vk(key):
     """pynput represents these two different ways depending on platform:
     - Windows: a plain KeyCode with `.vk` set directly.
     - macOS: a named Key enum member (e.g. Key.f13) whose vk is nested one
@@ -27,11 +29,24 @@ def _get_vk(key):
     return getattr(value, "vk", None)
 
 
-def start_listener(on_slot_pressed):
-    """on_slot_pressed(slot_name: str) is called once per key-down."""
+_VOLUME_KEYS = {
+    keyboard.Key.media_volume_up,
+    keyboard.Key.media_volume_down,
+    keyboard.Key.media_volume_mute,
+}
+
+
+def start_listener(on_slot_pressed, on_volume_key=None):
+    """on_slot_pressed(slot_name: str) is called once per Quick-Key key-down.
+    on_volume_key() is called whenever a volume up/down/mute key is pressed --
+    the dial sends those, but so does any keyboard."""
 
     def on_press(key):
-        vk = _get_vk(key)
+        if on_volume_key is not None and key in _VOLUME_KEYS:
+            debug(f"volume key seen: {key}")
+            on_volume_key()
+            return
+        vk = get_vk(key)
         if vk in VK_TO_SLOT:
             on_slot_pressed(VK_TO_SLOT[vk])
 

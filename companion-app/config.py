@@ -1,6 +1,6 @@
 """
 Loads/saves the profile-aware config: a named set of profiles, each holding
-its own key/encoder -> [action] mapping, plus which profile is active.
+its own key -> [action] mapping, plus which profile is active.
 
     {
       "active_profile": "profile_1",
@@ -15,12 +15,14 @@ action_picker.py for where these get created. An action is:
     {"type": "app",  "value": "<path to .exe/.app>"}
     {"type": "url",  "value": "<https://...>"}
     {"type": "text", "value": "<snippet to type out>"}
+    {"type": "macro", "value": [<recorded key down/up events>]}  (see recorder.py)
 One slot can hold any number of actions, mixed types included; on keypress
 every action assigned to that slot (in the active profile) runs in order.
 """
 
 import json
 import os
+from urllib.parse import urlparse
 
 from keymap import SLOT_ORDER
 
@@ -117,4 +119,37 @@ def action_label(action: dict) -> str:
         if len(preview) > 40:
             preview = preview[:40] + "…"
         return f"[Text] {preview}"
+    elif action_type == "macro":
+        from recorder import macro_summary  # local import: recorder pulls in pynput
+        return f"[Macro] {macro_summary(value)}"
     return str(value)
+
+
+def action_short_name(action: dict) -> str:
+    """A few words that fit on the Quick-Key's small screen."""
+    action_type = action.get("type", "app")
+    value = action.get("value", "")
+    if action_type == "app":
+        base = os.path.basename(str(value).rstrip("/\\"))
+        return os.path.splitext(base)[0] or base        # "Word.app" / "Word.lnk" -> "Word"
+    if action_type == "url":
+        host = urlparse(value).netloc or value
+        return host[4:] if host.startswith("www.") else host
+    if action_type == "text":
+        preview = " ".join(str(value).split())
+        return f'"{preview[:22]}"' + ("..." if len(preview) > 22 else "")
+    if action_type == "macro":
+        presses = sum(1 for e in value if e.get("action") == "down")
+        return f"Macro ({presses} keys)"
+    return str(value)
+
+
+def summarize_actions(actions: list, max_lines: int = 3) -> list:
+    """One short line per action, for the screen. More than fit are folded
+    into a final '+N more'."""
+    names = [action_short_name(a) for a in actions]
+    if not names:
+        return ["Nothing assigned yet"]
+    if len(names) <= max_lines:
+        return names
+    return names[:max_lines - 1] + [f"+{len(names) - (max_lines - 1)} more"]

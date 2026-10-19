@@ -1,1 +1,4 @@
 pynput>=1.7.6
+pyserial>=3.5
+# Windows only: reads the system volume for the Quick-Key's volume bar.
+pycaw; sys_platform == "win32"
