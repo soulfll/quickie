@@ -22,11 +22,29 @@ every action assigned to that slot (in the active profile) runs in order.
 
 import json
 import os
+import sys
 from urllib.parse import urlparse
 
 from keymap import SLOT_ORDER
 
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
+
+def data_dir() -> str:
+    """Where Quick-Key keeps the user's settings (and its error log).
+
+    Running from source (a developer): next to the code, as it always was.
+    Running as the installed .exe: the code lives in a temporary folder that is
+    deleted when the app closes, and in Program Files it wouldn't be writable
+    anyway -- so settings go in the user's own app-data folder, which survives
+    restarts, upgrades and reinstalls."""
+    if getattr(sys, "frozen", False):
+        base = os.environ.get("APPDATA") or os.path.expanduser("~")
+        folder = os.path.join(base, "Quick-Key")
+        os.makedirs(folder, exist_ok=True)
+        return folder
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+CONFIG_PATH = os.path.join(data_dir(), "config.json")
 DEFAULT_PROFILE = "profile_1"
 
 
@@ -50,8 +68,24 @@ def load_config() -> dict:
             "profiles": {DEFAULT_PROFILE: _empty_slots()},
         }
 
-    with open(CONFIG_PATH, "r") as f:
-        data = json.load(f)
+    try:
+        with open(CONFIG_PATH, "r") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            raise ValueError("config is not a JSON object")
+    except (ValueError, OSError) as e:
+        # A damaged settings file must not stop the app from opening (the
+        # installed app has no console to show an error in). Keep the bad file
+        # for inspection and start fresh.
+        print(f"[config] couldn't read {CONFIG_PATH}: {e}")
+        try:
+            os.replace(CONFIG_PATH, CONFIG_PATH + ".broken")
+        except OSError:
+            pass
+        return {
+            "active_profile": DEFAULT_PROFILE,
+            "profiles": {DEFAULT_PROFILE: _empty_slots()},
+        }
 
     # Defensive defaults in case config.json was hand-edited or is stale.
     data.setdefault("profiles", {})
@@ -67,8 +101,12 @@ def load_config() -> dict:
 
 
 def save_config(config: dict) -> None:
-    with open(CONFIG_PATH, "w") as f:
+    # Write to a side file and swap it in, so a crash or power cut mid-save
+    # can never leave a half-written config behind.
+    tmp = CONFIG_PATH + ".tmp"
+    with open(tmp, "w") as f:
         json.dump(config, f, indent=2)
+    os.replace(tmp, CONFIG_PATH)
 
 
 def list_profiles(config: dict) -> list:

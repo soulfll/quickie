@@ -12,19 +12,23 @@
 
 # -*- mode: python ; coding: utf-8 -*-
 
+from PyInstaller.utils.hooks import collect_submodules
+
+# The libraries below pick their platform backend at runtime (pynput's Windows
+# keyboard hook, pyserial's Windows port lister, pycaw/comtypes for the volume
+# bar), which PyInstaller's static scan can miss -- the app then crashes on a
+# PC with no Python installed. Including every submodule of each is the
+# reliable fix, and costs only a little size.
+hidden = []
+for pkg in ('pynput', 'serial', 'pycaw', 'comtypes'):
+    hidden += collect_submodules(pkg)
+
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
     datas=[],
-    # pynput loads its Windows backend dynamically based on sys.platform,
-    # which PyInstaller's static import scanner can miss. Spelling it out
-    # here avoids a "No module named pynput.keyboard._win32" crash at
-    # runtime on a machine that doesn't have a dev Python install to fall
-    # back on.
-    hiddenimports=['pynput.keyboard._win32', 'pynput.mouse._win32',
-                   'serial.tools.list_ports_windows',
-                   'pycaw.pycaw', 'comtypes'],
+    hiddenimports=hidden,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -43,7 +47,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,   # off: UPX-packed exes are flagged by antivirus far more often
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,  # no terminal window -- just the GUI, like a real app

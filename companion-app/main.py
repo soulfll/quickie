@@ -23,10 +23,21 @@ mouse-driven "Add..." buttons in each row instead -- both paths write to
 the same config.
 """
 
+import os
 import queue
+import sys
 import threading
+import time
 import tkinter as tk
+import traceback
 from tkinter import messagebox
+
+# The installed app is a "windowed" program with no console, and Python then
+# has no stdout/stderr at all -- some libraries crash if they try to print.
+# Give them somewhere harmless to write.
+for _stream in ("stdout", "stderr"):
+    if getattr(sys, _stream) is None:
+        setattr(sys, _stream, open(os.devnull, "w"))
 
 import config as config_store
 import single_instance
@@ -160,6 +171,10 @@ def main():
     current_config = config_store.load_config()
 
     root = tk.Tk()
+    # Errors inside button clicks etc. are caught by Tk and would only be
+    # printed to a console that the installed app doesn't have.
+    root.report_callback_exception = lambda exc, val, tb: log_error(
+        "".join(traceback.format_exception(exc, val, tb)))
 
     def get_active_slots():
         return config_store.get_active_slots(current_config)
@@ -206,5 +221,33 @@ def main():
     root.mainloop()
 
 
+def error_log_path() -> str:
+    return os.path.join(config_store.data_dir(), "error.log")
+
+
+def log_error(details: str) -> None:
+    """Append an error to error.log, so there is something to send along when
+    the installed app (which has no console) misbehaves."""
+    try:
+        with open(error_log_path(), "a") as f:
+            f.write(time.strftime("%Y-%m-%d %H:%M:%S") + "\n" + details + "\n")
+    except OSError:
+        pass
+
+
 if __name__ == "__main__":
-    main()
+    # Same idea for errors in background threads (listener, device link, ...).
+    threading.excepthook = lambda args: log_error("".join(
+        traceback.format_exception(args.exc_type, args.exc_value, args.exc_traceback)))
+    try:
+        main()
+    except Exception:
+        log_error(traceback.format_exc())
+        try:
+            messagebox.showerror(
+                "Quick-Key",
+                "Quick-Key hit an unexpected error and has to close.\n\n"
+                f"Details were saved to:\n{error_log_path()}")
+        except Exception:
+            pass
+        raise
