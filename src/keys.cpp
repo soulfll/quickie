@@ -2,12 +2,16 @@
 
 #ifdef BOARD_V4
 // New PCB (teensytesttrey schematic), built with `-e teensy40_v4`:
-// the 8 switches SW2..SW9 sit on pins 0-7 in a straight run. Which physical
-// grid slot each index lands in isn't known from the schematic alone -- press
-// each key and watch the serial monitor to map "key N" to a position.
-// Verified on the board: reading left-to-right, top-to-bottom the grid is
-//   0 1 [encoder] / 2 3 4 / 5 6 7, so key N here is already "Key N+1" in the app.
-static const uint8_t key_pins[NUM_KEYS] = {0, 1, 2, 3, 4, 5, 6, 7};
+// the 8 switches SW2..SW9 sit on pins 0-7. We want "Key N" in the app to read
+// left-to-right, top-to-bottom:
+//   Key1 Key2 [dial]
+//   Key3 Key4 Key5
+//   Key6 Key7 Key8
+// On the board, each row came out mirrored with the pins in numeric order
+// (it read 2 1 / 5 4 3 / 8 7 6), so the list below is that order flipped
+// within each row. The pin at each physical position, in reading order:
+//   pins 1 0 [dial] / 4 3 2 / 7 6 5   (key_pins[i] is the pin for Key i+1)
+static const uint8_t key_pins[NUM_KEYS] = {1, 0, 4, 3, 2, 7, 6, 5};
 #else
 // Original v3 PCB, pulled directly from hardware/new project v.3 new layout.kicad_pcb
 // (grid reads left-to-right, top-to-bottom; bottom-left slot is the encoder,
