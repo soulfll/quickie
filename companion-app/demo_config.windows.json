@@ -1,0 +1,378 @@
+{
+  "active_profile": "Office",
+  "profiles": {
+    "Office": {
+      "key_1": [
+        {
+          "type": "app",
+          "value": "excel",
+          "name": "Excel"
+        },
+        {
+          "type": "app",
+          "value": "outlook",
+          "name": "Outlook"
+        },
+        {
+          "type": "url",
+          "value": "https://outlook.office.com/calendar",
+          "name": "Calendar"
+        },
+        {
+          "type": "url",
+          "value": "https://teams.microsoft.com",
+          "name": "Teams"
+        }
+      ],
+      "key_2": [
+        {
+          "type": "macro",
+          "name": "Copy",
+          "value": [
+            {
+              "action": "down",
+              "delay": 0.0,
+              "key": "ctrl"
+            },
+            {
+              "action": "down",
+              "delay": 0.05,
+              "char": "c"
+            },
+            {
+              "action": "up",
+              "delay": 0.04,
+              "char": "c"
+            },
+            {
+              "action": "up",
+              "delay": 0.03,
+              "key": "ctrl"
+            }
+          ]
+        }
+      ],
+      "key_3": [
+        {
+          "type": "macro",
+          "name": "Paste",
+          "value": [
+            {
+              "action": "down",
+              "delay": 0.0,
+              "key": "ctrl"
+            },
+            {
+              "action": "down",
+              "delay": 0.05,
+              "char": "v"
+            },
+            {
+              "action": "up",
+              "delay": 0.04,
+              "char": "v"
+            },
+            {
+              "action": "up",
+              "delay": 0.03,
+              "key": "ctrl"
+            }
+          ]
+        }
+      ],
+      "key_4": [
+        {
+          "type": "macro",
+          "name": "Switch window",
+          "value": [
+            {
+              "action": "down",
+              "delay": 0.0,
+              "key": "alt"
+            },
+            {
+              "action": "down",
+              "delay": 0.05,
+              "key": "tab"
+            },
+            {
+              "action": "up",
+              "delay": 0.04,
+              "key": "tab"
+            },
+            {
+              "action": "up",
+              "delay": 0.03,
+              "key": "alt"
+            }
+          ]
+        }
+      ],
+      "key_5": [
+        {
+          "type": "macro",
+          "name": "Paste values",
+          "value": [
+            {
+              "action": "down",
+              "delay": 0.0,
+              "key": "ctrl"
+            },
+            {
+              "action": "down",
+              "delay": 0.03,
+              "key": "alt"
+            },
+            {
+              "action": "down",
+              "delay": 0.05,
+              "char": "v"
+            },
+            {
+              "action": "up",
+              "delay": 0.04,
+              "char": "v"
+            },
+            {
+              "action": "up",
+              "delay": 0.03,
+              "key": "alt"
+            },
+            {
+              "action": "up",
+              "delay": 0.03,
+              "key": "ctrl"
+            },
+            {
+              "action": "down",
+              "delay": 0.45,
+              "char": "v"
+            },
+            {
+              "action": "up",
+              "delay": 0.04,
+              "char": "v"
+            },
+            {
+              "action": "down",
+              "delay": 0.3,
+              "key": "enter"
+            },
+            {
+              "action": "up",
+              "delay": 0.04,
+              "key": "enter"
+            }
+          ]
+        }
+      ],
+      "key_6": [
+        {
+          "type": "macro",
+          "name": "AutoSum",
+          "value": [
+            {
+              "action": "down",
+              "delay": 0.0,
+              "key": "alt"
+            },
+            {
+              "action": "down",
+              "delay": 0.05,
+              "char": "="
+            },
+            {
+              "action": "up",
+              "delay": 0.04,
+              "char": "="
+            },
+            {
+              "action": "up",
+              "delay": 0.03,
+              "key": "alt"
+            }
+          ]
+        }
+      ],
+      "key_7": [
+        {
+          "type": "text",
+          "value": "DemoPass-123!",
+          "secret": true,
+          "enter": true
+        }
+      ],
+      "key_8": [
+        {
+          "type": "text",
+          "value": "Best regards,\nMarcos",
+          "name": "Email sign-off"
+        }
+      ]
+    },
+    "Meetings": {
+      "key_1": [
+        {
+          "type": "url",
+          "value": "https://teams.microsoft.com",
+          "name": "Teams"
+        }
+      ],
+      "key_2": [
+        {
+          "type": "macro",
+          "name": "Mute / unmute",
+          "value": [
+            {
+              "action": "down",
+              "delay": 0.0,
+              "key": "ctrl"
+            },
+            {
+              "action": "down",
+              "delay": 0.03,
+              "key": "shift"
+            },
+            {
+              "action": "down",
+              "delay": 0.05,
+              "char": "m"
+            },
+            {
+              "action": "up",
+              "delay": 0.04,
+              "char": "m"
+            },
+            {
+              "action": "up",
+              "delay": 0.03,
+              "key": "shift"
+            },
+            {
+              "action": "up",
+              "delay": 0.03,
+              "key": "ctrl"
+            }
+          ]
+        }
+      ],
+      "key_3": [
+        {
+          "type": "macro",
+          "name": "Camera on/off",
+          "value": [
+            {
+              "action": "down",
+              "delay": 0.0,
+              "key": "ctrl"
+            },
+            {
+              "action": "down",
+              "delay": 0.03,
+              "key": "shift"
+            },
+            {
+              "action": "down",
+              "delay": 0.05,
+              "char": "o"
+            },
+            {
+              "action": "up",
+              "delay": 0.04,
+              "char": "o"
+            },
+            {
+              "action": "up",
+              "delay": 0.03,
+              "key": "shift"
+            },
+            {
+              "action": "up",
+              "delay": 0.03,
+              "key": "ctrl"
+            }
+          ]
+        }
+      ],
+      "key_4": [
+        {
+          "type": "macro",
+          "name": "Raise hand",
+          "value": [
+            {
+              "action": "down",
+              "delay": 0.0,
+              "key": "ctrl"
+            },
+            {
+              "action": "down",
+              "delay": 0.03,
+              "key": "shift"
+            },
+            {
+              "action": "down",
+              "delay": 0.05,
+              "char": "k"
+            },
+            {
+              "action": "up",
+              "delay": 0.04,
+              "char": "k"
+            },
+            {
+              "action": "up",
+              "delay": 0.03,
+              "key": "shift"
+            },
+            {
+              "action": "up",
+              "delay": 0.03,
+              "key": "ctrl"
+            }
+          ]
+        }
+      ],
+      "key_5": [
+        {
+          "type": "macro",
+          "name": "Share screen",
+          "value": [
+            {
+              "action": "down",
+              "delay": 0.0,
+              "key": "ctrl"
+            },
+            {
+              "action": "down",
+              "delay": 0.03,
+              "key": "shift"
+            },
+            {
+              "action": "down",
+              "delay": 0.05,
+              "char": "e"
+            },
+            {
+              "action": "up",
+              "delay": 0.04,
+              "char": "e"
+            },
+            {
+              "action": "up",
+              "delay": 0.03,
+              "key": "shift"
+            },
+            {
+              "action": "up",
+              "delay": 0.03,
+              "key": "ctrl"
+            }
+          ]
+        }
+      ],
+      "key_6": [],
+      "key_7": [],
+      "key_8": []
+    }
+  }
+}

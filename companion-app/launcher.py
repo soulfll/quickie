@@ -23,7 +23,7 @@ import threading
 import time
 import webbrowser
 
-from pynput.keyboard import Controller as KeyboardController
+from pynput.keyboard import Controller as KeyboardController, Key
 
 from recorder import decode_key
 
@@ -57,9 +57,12 @@ def _open_url(url: str) -> None:
         print(f"[launcher] failed to open url '{url}': {e}")
 
 
-def _type_text(text: str) -> None:
+def _type_text(text: str, enter: bool = False) -> None:
     try:
         _kb.type(text)
+        if enter:
+            _kb.press(Key.enter)
+            _kb.release(Key.enter)
     except Exception as e:
         print(f"[launcher] failed to type text: {e}")
 
@@ -98,7 +101,7 @@ def run_action(action: dict) -> None:
     elif action_type == "url":
         _open_url(value)
     elif action_type == "text":
-        _type_text(value)
+        _type_text(value, enter=bool(action.get("enter")))
     elif action_type == "macro":
         _play_macro(value)
     else:

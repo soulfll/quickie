@@ -192,6 +192,59 @@ def _pick_text(parent):
     return []
 
 
+class _PasswordDialog(tk.Toplevel):
+    """A password key: typed out on a key press, but never shown in the app
+    window or on the Quick-Key's screen. Asked for twice to catch typos."""
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Type a Password")
+        self.result = None
+        self.transient(parent)
+        self.grab_set()
+        self.resizable(False, False)
+
+        self.first, self.again = tk.StringVar(), tk.StringVar()
+        self.enter = tk.BooleanVar(value=True)
+        ttk.Label(self, text="Password to type when this key is pressed:").pack(anchor="w", padx=12, pady=(12, 4))
+        first = ttk.Entry(self, textvariable=self.first, show="\u2022", width=36)
+        first.pack(padx=12)
+        ttk.Label(self, text="Again, to be sure:").pack(anchor="w", padx=12, pady=(8, 4))
+        ttk.Entry(self, textvariable=self.again, show="\u2022", width=36).pack(padx=12)
+        ttk.Checkbutton(self, text="Press Enter after typing it", variable=self.enter).pack(anchor="w", padx=12, pady=(8, 0))
+        ttk.Label(
+            self, foreground="#8a5a00", justify="left",
+            text="Saved as plain text on this PC. Fine for a demo or a low-risk\nlogin; keep important passwords in a password manager.",
+        ).pack(anchor="w", padx=12, pady=(8, 4))
+        self.error = ttk.Label(self, foreground="#b00020")
+        self.error.pack(anchor="w", padx=12)
+        first.focus_set()
+
+        btns = ttk.Frame(self)
+        btns.pack(pady=(4, 12))
+        ttk.Button(btns, text="Save", command=self._save).pack(side="left", padx=4)
+        ttk.Button(btns, text="Cancel", command=self.destroy).pack(side="left", padx=4)
+        self.bind("<Return>", lambda e: self._save())
+
+        self.wait_window(self)
+
+    def _save(self):
+        if not self.first.get():
+            self.error.config(text="Type a password first.")
+        elif self.first.get() != self.again.get():
+            self.error.config(text="The two entries don't match.")
+        else:
+            self.result = {"type": "text", "value": self.first.get(), "secret": True}
+            if self.enter.get():
+                self.result["enter"] = True
+            self.destroy()
+
+
+def _pick_password(parent):
+    dialog = _PasswordDialog(parent)
+    return [dialog.result] if dialog.result else []
+
+
 class _RecordDialog(tk.Toplevel):
     """Start/stop recorder for a keystroke macro. Recording is global (works
     while you're typing in other apps), so it's stopped with a mouse click on
@@ -276,6 +329,7 @@ class _TypeChooser(tk.Toplevel):
             ("Open App(s)", "app"),
             ("Open Website", "url"),
             ("Type Text Snippet", "text"),
+            ("Type a Password", "password"),
             ("Record Keystrokes", "macro"),
         ]:
             ttk.Button(
@@ -302,6 +356,8 @@ def prompt_for_actions(parent):
         return _pick_website(parent)
     elif chooser.choice == "text":
         return _pick_text(parent)
+    elif chooser.choice == "password":
+        return _pick_password(parent)
     elif chooser.choice == "macro":
         return _pick_macro(parent)
     return []

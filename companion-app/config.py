@@ -15,7 +15,11 @@ action_picker.py for where these get created. An action is:
     {"type": "app",  "value": "<path to .exe/.app>"}
     {"type": "url",  "value": "<https://...>"}
     {"type": "text", "value": "<snippet to type out>"}
+                                 optional: "enter": true  (press Enter afterwards)
+                                           "secret": true (a password: hidden in the app and on the screen)
     {"type": "macro", "value": [<recorded key down/up events>]}  (see recorder.py)
+Any action may also carry "name": "<a few words>" to show on the Quick-Key's
+screen and in the list instead of the default description.
 One slot can hold any number of actions, mixed types included; on keypress
 every action assigned to that slot (in the active profile) runs in order.
 """
@@ -148,6 +152,11 @@ def action_label(action: dict) -> str:
     """Short, scannable one-line label for a list row."""
     action_type = action.get("type", "app")
     value = action.get("value", "")
+    if action.get("secret"):                 # a password: never show it
+        return "[Password] " + "\u2022" * 8
+    if action.get("name"):                   # an optional friendly name
+        prefix = {"app": "[App]", "url": "[Web]", "text": "[Text]", "macro": "[Macro]"}.get(action_type, "")
+        return f"{prefix} {action['name']}".strip()
     if action_type == "app":
         return f"[App] {value}"
     elif action_type == "url":
@@ -167,6 +176,10 @@ def action_short_name(action: dict) -> str:
     """A few words that fit on the Quick-Key's small screen."""
     action_type = action.get("type", "app")
     value = action.get("value", "")
+    if action.get("secret"):                 # a password: never show it
+        return "Password"
+    if action.get("name"):                   # an optional friendly name
+        return str(action["name"])
     if action_type == "app":
         base = os.path.basename(str(value).rstrip("/\\"))
         return os.path.splitext(base)[0] or base        # "Word.app" / "Word.lnk" -> "Word"
