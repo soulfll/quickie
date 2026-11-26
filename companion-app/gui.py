@@ -61,12 +61,52 @@ class QuickKeyGUI:
             text=f"Tip: {mod}-click to select several items in a list, then Remove Selected.",
         ).pack(fill="x", padx=10)
 
-        # -- per-slot rows -------------------------------------------------------
+        # -- per-slot rows (in a scrollable area: all 8 rows never fit at once) ---
         container = ttk.Frame(root)
         container.pack(fill="both", expand=True, padx=10, pady=10)
 
+        background = ttk.Style().lookup("TFrame", "background") or root.cget("bg")
+        self._canvas = tk.Canvas(container, highlightthickness=0, borderwidth=0,
+                                 background=background, yscrollincrement=24)
+        scrollbar = ttk.Scrollbar(container, orient="vertical", command=self._canvas.yview)
+        self._canvas.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        self._canvas.pack(side="left", fill="both", expand=True)
+
+        rows = ttk.Frame(self._canvas)
+        rows_window = self._canvas.create_window((0, 0), window=rows, anchor="nw")
+        # Keep the scrollable height matched to the rows, and the rows as wide as the window.
+        rows.bind("<Configure>", lambda e: self._canvas.configure(scrollregion=self._canvas.bbox("all")))
+        self._canvas.bind("<Configure>", lambda e: self._canvas.itemconfigure(rows_window, width=e.width))
+
+        # Mouse wheel / trackpad scrolling (Windows, macOS and Linux differ).
+        root.bind_all("<MouseWheel>", self._on_mousewheel)
+        root.bind_all("<Button-4>", self._on_mousewheel)
+        root.bind_all("<Button-5>", self._on_mousewheel)
+
         for slot in SLOT_ORDER:
-            self._build_row(container, slot)
+            self._build_row(rows, slot)
+
+    def _on_mousewheel(self, event):
+        try:
+            if event.widget.winfo_toplevel() is not self.root:
+                return                      # a pop-up dialog, not the main window
+        except (AttributeError, tk.TclError):
+            return
+        if self._canvas.yview() == (0.0, 1.0):
+            return                          # everything already fits
+        if isinstance(event.widget, tk.Listbox) and event.widget.yview() != (0.0, 1.0):
+            return                          # that list has its own overflow: let it scroll
+        if event.num == 4:
+            step = -2
+        elif event.num == 5:
+            step = 2
+        elif sys.platform == "darwin":
+            step = -event.delta             # macOS reports small, already-scaled steps
+        else:
+            step = -int(event.delta / 120) * 2   # Windows: 120 per notch
+        if step:
+            self._canvas.yview_scroll(step, "units")
 
     # -- row construction --------------------------------------------------
 
