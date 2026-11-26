@@ -255,6 +255,7 @@ class _RecordDialog(tk.Toplevel):
         super().__init__(parent)
         self.title("Record Keystrokes")
         self.result = None
+        self.secret = False
         self._recorder = Recorder()
         self.transient(parent)
         self.resizable(False, False)
@@ -262,12 +263,22 @@ class _RecordDialog(tk.Toplevel):
 
         self.info = tk.StringVar(
             value="Click Start, then do your keystrokes in any app.\n"
-                  "Come back here and click Stop when you're done.\n\n"
-                  "Don't type passwords while recording -- every key is saved."
+                  "Come back here and click Stop when you're done."
         )
         ttk.Label(self, textvariable=self.info, justify="left").pack(
-            padx=20, pady=(16, 10)
+            padx=20, pady=(16, 8)
         )
+        # For a password: record typing it once, and it is hidden from now on --
+        # in the app's list and on the Quick-Key's screen.
+        self.hide = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            self, text="This is a password: hide it everywhere", variable=self.hide,
+        ).pack(anchor="w", padx=20)
+        ttk.Label(
+            self, foreground="#8a5a00", justify="left",
+            text="Every key is saved as plain text on this PC. Fine for a demo or\n"
+                 "a low-risk login; keep important passwords in a password manager.",
+        ).pack(anchor="w", padx=20, pady=(4, 10))
 
         btns = ttk.Frame(self)
         btns.pack(pady=(0, 16))
@@ -298,6 +309,7 @@ class _RecordDialog(tk.Toplevel):
         events = self._recorder.stop()
         if any(e["action"] == "down" for e in events):
             self.result = events
+            self.secret = self.hide.get()
         self.destroy()
 
     def _cancel(self):
@@ -309,7 +321,10 @@ class _RecordDialog(tk.Toplevel):
 def _pick_macro(parent):
     dialog = _RecordDialog(parent)
     if dialog.result:
-        return [{"type": "macro", "value": dialog.result}]
+        action = {"type": "macro", "value": dialog.result}
+        if dialog.secret:
+            action["secret"] = True
+        return [action]
     return []
 
 
