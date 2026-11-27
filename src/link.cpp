@@ -1,5 +1,6 @@
 #include "link.h"
 #include "display.h"
+#include "unlock.h"
 
 static char line_buf[200];
 static size_t line_len = 0;
@@ -44,6 +45,13 @@ static void handle_line(char *line) {
     display_show_volume(percent, bar && atoi(bar + 1) != 0);
   } else if (line[0] == 'C' && line[1] == '\0') {
     display_clear_message();
+  } else if (line[0] == 'W' && line[1] == ':') {
+    // W:<password>  store the unlock key's password (W: alone clears it).
+    // The whole rest of the line is the password -- '|' and ':' included --
+    // and it is never echoed back.
+    bool ok = unlock_set(line + 2);
+    Serial.println(!ok ? "unlock password rejected"
+                       : (line[2] ? "unlock password saved" : "unlock password cleared"));
   }
   // Anything else (the "H" hello, or stray keystrokes typed into the serial
   // monitor) is ignored on purpose.

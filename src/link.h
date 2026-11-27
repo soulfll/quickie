@@ -10,6 +10,7 @@
 //                                          next one (a step that waits for you)
 //   C                                      clear any message (back to idle)
 //   V:<percent 0-100>|<muted 0/1>          show the volume bar for a moment
+//   W:<password>                           set the unlock key's password (W: clears it)
 //   H                                      "hello" -- app connected (ignored)
 //
 // Call link_poll() every loop; it never blocks.

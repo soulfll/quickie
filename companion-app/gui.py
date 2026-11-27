@@ -19,13 +19,15 @@ PENDING_COLOR = "#b58900"  # amber -- marks an unconfirmed assignment
 
 class QuickKeyGUI:
     def __init__(self, root, slots, profile_names, active_profile,
-                 on_change, on_profile_change, on_new_profile, on_assign_clicked):
+                 on_change, on_profile_change, on_new_profile, on_assign_clicked,
+                 on_unlock_clicked=None):
         self.root = root
         self.slots = slots  # live dict for the *active* profile: slot -> [actions]
         self.on_change = on_change              # called after any manual edit
         self.on_profile_change = on_profile_change  # called with new profile name
         self.on_new_profile = on_new_profile        # called with new profile name
         self.on_assign_clicked = on_assign_clicked  # called when "Assign via Key Press" clicked
+        self.on_unlock_clicked = on_unlock_clicked  # called when "Unlock Password" clicked
         self.listboxes = {}
 
         root.title("Quick-Key")
@@ -50,6 +52,8 @@ class QuickKeyGUI:
             top, text="Assign via Key Press...", command=self._assign_clicked,
         )
         self.assign_btn.pack(side="right")
+        if on_unlock_clicked is not None:
+            ttk.Button(top, text="Unlock Password...", command=on_unlock_clicked).pack(side="right", padx=(0, 6))
 
         # -- status line -------------------------------------------------------
         self.status_var = tk.StringVar(value="Waiting for a key press...")

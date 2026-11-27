@@ -42,6 +42,7 @@ for _stream in ("stdout", "stderr"):
 import config as config_store
 import single_instance
 from action_picker import prompt_for_actions
+from unlock_dialog import ask_unlock_password
 from device_link import DeviceLink
 from gui import QuickKeyGUI
 from keymap import SLOT_LABELS
@@ -78,6 +79,26 @@ def start_assign(gui):
     gui.set_assign_enabled(False)
     gui.set_status("Assign mode: press the physical key you want to assign...")
     link.show("Assign a key", ["Press the key you", "want to set"], sticky=True)
+
+
+def set_unlock_password(gui):
+    """Key 7 can type a password by itself (even at the Windows sign-in screen);
+    this stores it inside the Quick-Key. See unlock_dialog.py."""
+    password = ask_unlock_password(gui.root)
+    if password is None:
+        return
+    if not link.set_unlock_password(password):
+        messagebox.showwarning(
+            "Quick-Key",
+            "The Quick-Key isn't connected, so the password couldn't be saved.\n\n"
+            "Plug it in, wait for its screen to show the profile name, and try again.")
+        return
+    if password:
+        gui.set_status("Unlock password saved in the Quick-Key. Try Key 7 in Notepad first.")
+        link.show("Unlock", ["Password saved", "Key 7 will type it"])
+    else:
+        gui.set_status("Unlock password cleared. Key 7 is a normal key again.")
+        link.show("Unlock", ["Password cleared"])
 
 
 def _handle_select(slot, gui):
@@ -209,6 +230,7 @@ def main():
         on_profile_change,
         on_new_profile,
         lambda: start_assign(gui),
+        lambda: set_unlock_password(gui),
     )
 
     start_listener(on_slot_pressed, on_volume_key=volume_watcher.notify)

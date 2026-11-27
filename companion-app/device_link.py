@@ -11,6 +11,7 @@ Protocol, one line of plain text per message (see src/link.cpp in the firmware):
     A:<title>|<line>|<line>|<line>\n a message that stays until the next one
     C\n                              clear any message
     V:<percent>|<muted 0/1>\n        show the volume bar for a moment
+    W:<password>\n                   set the unlock key's password ("W:" clears it)
 
 Everything here is best-effort and runs in its own thread: if the Quick-Key
 isn't plugged in, or the serial library is missing, the rest of the app works
@@ -37,6 +38,7 @@ BAUD = 115200
 RETRY_SECONDS = 1.5
 MAX_NAME = 20
 MAX_LINE = 40         # characters per screen line
+MAX_PASSWORD = 63     # keep in step with UNLOCK_MAX_LEN in src/unlock.h
 
 
 def clean_text(text: str, limit: int = MAX_LINE) -> str:
@@ -100,6 +102,18 @@ class DeviceLink:
     def clear(self):
         if self.connected:
             self._outbox.put("C\n")
+
+    def set_unlock_password(self, password: str) -> bool:
+        """Store the unlock key's password inside the Quick-Key ("" clears it).
+        Returns False if the Quick-Key isn't connected or the password can't be
+        typed. The password is deliberately never logged."""
+        if not self.connected:
+            return False
+        if password and not (len(password) <= MAX_PASSWORD
+                             and all(32 <= ord(c) < 127 for c in password)):
+            return False
+        self._outbox.put(f"W:{password}\n")
+        return True
 
     def show_volume(self, percent: int, muted: bool):
         debug(f"show_volume({percent}, {muted}) connected={self.connected}")

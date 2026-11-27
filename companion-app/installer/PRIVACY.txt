@@ -13,10 +13,17 @@ What this app does:
     Keystrokes feature. Only while you have a recording open -- from
     clicking Start Recording until you click Stop -- the app captures the
     keys you press in any program, so it can replay them later. Those
-    recordings are saved only in config.json on this computer. Do not type
-    passwords or other secrets while recording.
-  - Your key assignments are saved in a local file (config.json) inside the
-    app's own folder on this computer.
+    recordings are saved only in config.json on this computer, as plain
+    text. If you record a password, tick "hide it" so it is kept off the
+    screen, but know that it is still stored unencrypted -- use only
+    low-risk passwords, and keep important ones in a password manager.
+  - Your key assignments are saved in a local file (config.json) in the
+    Quick-Key folder inside your Windows user profile (%APPDATA%\Quick-Key).
+  - The optional "Unlock Password" for Key 7 is sent to the Quick-Key
+    device over USB and stored inside the device itself, as plain text, so
+    the device can type it (for example at the Windows sign-in screen).
+    Anyone who has the device could read it back out. It is not stored in
+    config.json, and the app never sends it anywhere else.
 
 What this app does NOT do:
   - It does not send anything over the internet. No analytics, no telemetry,

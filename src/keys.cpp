@@ -1,4 +1,5 @@
 #include "keys.h"
+#include "unlock.h"
 
 #ifdef BOARD_V4
 // New PCB (teensytesttrey schematic), built with `-e teensy40_v4`:
@@ -31,6 +32,9 @@ static const uint16_t key_codes[NUM_KEYS] = {
 };
 
 static bool key_state[NUM_KEYS] = {false};
+// True while a key press was handled by the unlock key (typed a password), so
+// the matching release must not send an F-key release that never had a press.
+static bool key_swallowed[NUM_KEYS] = {false};
 static unsigned long last_change[NUM_KEYS] = {0};
 
 void keys_init() {
@@ -50,10 +54,22 @@ void keys_scan() {
       last_change[i] = now;
 
       if (pressed) {
-        Keyboard.press(key_codes[i]);
-        Serial.printf("key %d down (code %d)\n", i, key_codes[i]);
+        if (i == UNLOCK_KEY_INDEX && unlock_has_password()) {
+          // The unlock key: type the stored password ourselves (works at the
+          // Windows sign-in screen, where the app can't). Never printed.
+          key_swallowed[i] = true;
+          Serial.printf("key %d down (typing the stored password)\n", i);
+          unlock_type();
+        } else {
+          Keyboard.press(key_codes[i]);
+          Serial.printf("key %d down (code %d)\n", i, key_codes[i]);
+        }
       } else {
-        Keyboard.release(key_codes[i]);
+        if (key_swallowed[i]) {
+          key_swallowed[i] = false;
+        } else {
+          Keyboard.release(key_codes[i]);
+        }
         Serial.printf("key %d up\n", i);
       }
     }

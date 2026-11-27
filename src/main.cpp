@@ -4,10 +4,12 @@
 #include "rgb.h"
 #include "display.h"
 #include "link.h"
+#include "unlock.h"
 
 void setup() {
   Serial.begin(115200);
 
+  unlock_init();
   keys_init();
   encoder_init();
   rgb_init();
