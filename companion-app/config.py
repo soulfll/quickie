@@ -26,6 +26,7 @@ every action assigned to that slot (in the active profile) runs in order.
 
 import json
 import os
+import re
 import sys
 from urllib.parse import urlparse
 
@@ -148,6 +149,16 @@ def remove_action_from_slot(slots: dict, slot: str, action: dict) -> None:
         slots[slot].remove(action)
 
 
+def app_display_name(value) -> str:
+    """The app's plain name from whatever the key opens: "...\\Start Menu\\Programs\\Excel.lnk",
+    "/Applications/Word.app", "C:\\x\\notepad.exe" or just "excel" all become
+    "Excel" / "Word" / "notepad" / "excel" -- no folders, no file extension."""
+    text = str(value or "").strip().strip('"').rstrip("/\\")
+    name = re.split(r"[\\/]", text)[-1]
+    stem, ext = os.path.splitext(name)
+    return stem if ext.lower() in (".lnk", ".exe", ".app", ".url", ".bat", ".cmd") else (name or text)
+
+
 def action_label(action: dict) -> str:
     """Short, scannable one-line label for a list row."""
     action_type = action.get("type", "app")
@@ -158,7 +169,7 @@ def action_label(action: dict) -> str:
         prefix = {"app": "[App]", "url": "[Web]", "text": "[Text]", "macro": "[Macro]"}.get(action_type, "")
         return f"{prefix} {action['name']}".strip()
     if action_type == "app":
-        return f"[App] {value}"
+        return f"[App] {app_display_name(value)}"
     elif action_type == "url":
         return f"[Web] {value}"
     elif action_type == "text":
@@ -181,8 +192,7 @@ def action_short_name(action: dict) -> str:
     if action.get("name"):                   # an optional friendly name
         return str(action["name"])
     if action_type == "app":
-        base = os.path.basename(str(value).rstrip("/\\"))
-        return os.path.splitext(base)[0] or base        # "Word.app" / "Word.lnk" -> "Word"
+        return app_display_name(value)                  # "Word.app" / "Word.lnk" -> "Word"
     if action_type == "url":
         host = urlparse(value).netloc or value
         return host[4:] if host.startswith("www.") else host
