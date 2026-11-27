@@ -191,6 +191,14 @@ def main():
 
     current_config = config_store.load_config()
 
+    if sys.platform == "win32":
+        # Remember how each app's window is left, so it can be put back (see window_memory.py).
+        try:
+            import window_memory
+            window_memory.start_tracking(lambda: window_memory.exes_for_config(current_config))
+        except Exception as e:
+            print(f"[window_memory] not started: {e}")
+
     root = tk.Tk()
     # Errors inside button clicks etc. are caught by Tk and would only be
     # printed to a console that the installed app doesn't have.

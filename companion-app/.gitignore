@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 config.json
+window_layouts.json
 
 # PyInstaller / Inno Setup build output (see BUILD_WINDOWS.md) -- these are
 # generated from source on the Windows machine that builds them, not

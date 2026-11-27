@@ -98,3 +98,19 @@ press. Once it's wired:
 - `launcher.py` -- the one OS-specific piece; actually opens an app
 - `gui.py` -- Tkinter UI for assigning apps to slots
 - `config.example.json` -- template; real `config.json` is gitignored since it holds your local app paths
+
+## Window memory (Windows)
+
+Apps opened with an "Open App" key keep their window where you left it:
+
+- If the app is already open (say you minimized it with the "-" button), pressing
+  the key brings that window back to where it was, instead of opening a second
+  one at the default size.
+- The app quietly notes each app's window position, size, and whether it was
+  maximized, in `window_layouts.json` (next to `config.json`). The next time the
+  app is opened, it is put back the way you last left it -- including a window
+  that is large but not maximized.
+
+It only applies to ordinary desktop programs (Excel, Word, Notepad, ...). Store
+apps and websites are left alone. Code and tests: `window_memory.py`,
+`test_window_memory.py`.

@@ -38,10 +38,24 @@ _run_lock = threading.Lock()
 def _launch_app(path: str) -> None:
     try:
         if sys.platform == "win32":
+            import os
+            try:
+                import window_memory
+                # Already open (say, minimized)? Bring that window back to where
+                # it was instead of opening a second one at the default size.
+                if window_memory.bring_back_if_open(path):
+                    return
+            except Exception as e:
+                print(f"[launcher] window memory unavailable: {e}")
+                window_memory = None
             # os.startfile handles .exe, .lnk, and anything with a registered
             # file association -- the same as double-clicking it in Explorer.
-            import os
             os.startfile(path)
+            try:
+                if window_memory:
+                    window_memory.place_when_ready(path)   # put it where it was left last time
+            except Exception as e:
+                print(f"[launcher] couldn't restore the window position: {e}")
         elif sys.platform == "darwin":
             subprocess.Popen(["open", path])
         else:
